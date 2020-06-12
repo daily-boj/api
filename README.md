@@ -19,14 +19,21 @@
 
 ## 프로젝트 구조
 
-- src/
+- resources/
   - database/
-    - JSON 기반의 자체 DB와 상호작용합니다.
+    - 데이터베이스 저장 파일입니다.
+  - schema/
+    - JSON Schema를 저장합니다.
+- cli/
+  - 데이터를 조작하기 위한 cli 앱입니다.
+- github_db/
+  - JSON 기반의 자체 DB에 쿼리를 수행합니다.
+- libapi/
   - domain/
     - {table}/entity.rs
       - 데이터 로우를 표현하는 엔티티입니다.
     - {table}/repository.rs
-      - 데이터에 CRUD 연산을 합니다.
+      - 고수준 CRUD 연산을 제공합니다.
   - service/
     - 데이터를 가공합니다.
   - action/
@@ -36,5 +43,7 @@
   - resolver/
     - Provider를 조합해 모든 경우의 수로 request를 만들고,
       이를 Action에 보내 response를 생성합니다.
-  - cli/
-    - 데이터를 조작하기 위한 cli 앱입니다.
+- restpath/
+  - `service_macro`에 쓰일 Route 파서입니다.
+- service_macro/
+  - `#[service("/path/to/{api}")]`를 제공합니다.
