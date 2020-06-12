@@ -3,6 +3,6 @@ members = [
     "cli",
     "github_db",
     "libapi",
-    "restpath",
+    "route_path",
     "service_macro",
 ]

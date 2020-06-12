@@ -43,7 +43,7 @@
   - resolver/
     - Provider를 조합해 모든 경우의 수로 request를 만들고,
       이를 Action에 보내 response를 생성합니다.
-- restpath/
-  - `service_macro`에 쓰일 Route 파서입니다.
+- router_path/
+  - `service_macro`에 쓰일 Route Parser입니다.
 - service_macro/
   - `#[service("/path/to/{api}")]`를 제공합니다.
