@@ -8,6 +8,7 @@ use thiserror::Error;
 ///
 /// [`RoutePath`]: ../struct.RoutePath.html
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq)]
 pub enum RoutePathPart {
     /// Constant part. for example, `members`.
     Constant(String),
@@ -17,6 +18,7 @@ pub enum RoutePathPart {
 
 /// API route path.
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone, PartialEq)]
 pub struct RoutePath {
     parts: Vec<RoutePathPart>,
 }
@@ -66,6 +68,17 @@ impl RoutePath {
             })
             .collect();
         Ok(result?.join("/"))
+    }
+
+    /// Get declared variables in order.
+    pub fn variables(&self) -> Vec<String> {
+        self.parts
+            .iter()
+            .filter_map(|part| match part {
+                RoutePathPart::Constant(_) => None,
+                RoutePathPart::Variable(value) => Some(value.clone()),
+            })
+            .collect()
     }
 }
 
