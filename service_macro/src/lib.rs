@@ -64,6 +64,14 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
             fn path(&self) -> shaped::route_path::RoutePath {
                 #route_path.parse().expect(&format!("#original_name set invalid path: {}", #route_path))
             }
+            fn make_variables(&self, params: &Self::Param) -> std::collections::HashMap<String, String> {
+                let mut vars = std::collections::HashMap::new();
+                let (#(#param_name,)*) = params;
+                #(
+                    vars.insert(stringify!(#param_name).to_owned(), #param_name.into());
+                )*
+                vars
+            }
             fn execute(&self, params: Self::Param) -> Self::Response {
                 let (#(#param_name,)*) = params;
                 #raw_function_name(#(#param_name),*)
