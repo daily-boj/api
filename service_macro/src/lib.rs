@@ -24,6 +24,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
     let route_path = attr_args.path;
 
     let mut item = parse_macro_input!(item as ItemFn);
+    let vis = item.vis.clone();
     let param_type: Vec<_> = item
         .sig
         .inputs
@@ -56,7 +57,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
         #item
 
         #[allow(non_camel_case_types)]
-        struct #original_name;
+        #vis struct #original_name;
 
         impl shaped::Service for #original_name {
             type Param = (#(#param_type,)*);

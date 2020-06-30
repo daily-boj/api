@@ -14,13 +14,17 @@ pub(crate) fn parse_route(input: &str) -> IResult<&str, RoutePath> {
     Ok((input, RoutePath::from_raw_parts(parts)))
 }
 
-pub(crate) fn parse_constant(input: &str) -> IResult<&str, RoutePathPart> {
-    let (input, name) = take_while1(char::is_alphabetic)(input)?;
+fn parse_constant(input: &str) -> IResult<&str, RoutePathPart> {
+    let (input, name) = take_while1(is_valid_route_name_part)(input)?;
     Ok((input, RoutePathPart::Constant(name.to_owned())))
 }
 
-pub(crate) fn parse_variable(input: &str) -> IResult<&str, RoutePathPart> {
+fn parse_variable(input: &str) -> IResult<&str, RoutePathPart> {
     let (input, _) = tag(":")(input)?;
-    let (input, name) = take_while1(char::is_alphabetic)(input)?;
+    let (input, name) = take_while1(is_valid_route_name_part)(input)?;
     Ok((input, RoutePathPart::Variable(name.to_owned())))
+}
+
+fn is_valid_route_name_part(c: char) -> bool {
+    c.is_alphanumeric() || c == '-' || c == '_'
 }

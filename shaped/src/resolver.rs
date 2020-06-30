@@ -15,8 +15,11 @@ where
     ConcreteProvider: Provider<Item = Parameters>,
     ConcreteService: Service<Param = Parameters, Response = Response>,
 {
+    pub fn new(provider: ConcreteProvider, service: ConcreteService) -> Self {
+        Resolver { provider, service }
+    }
     pub fn resolve(&self) -> Result<Vec<(String, Response)>, route_path::RoutePathFormatError> {
-        let mut responses = vec![];
+        let mut responses = Vec::new();
         for params in self.provider.provide() {
             responses.push((
                 self.service
