@@ -7,3 +7,6 @@ members = [
     "service_macro",
     "shaped",
 ]
+
+[profile.dev.package."*"]
+opt-level = 2
