@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.31"
 clap = "2.33.1"
+colored = "1.9.3"
 dailyboj_api = { path = "../dailyboj_api" }

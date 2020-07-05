@@ -2,7 +2,7 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as PM2TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, AttributeArgs, FnArg, ItemFn, ReturnType};
+use syn::{parse_macro_input, AttributeArgs, FnArg, ItemFn, Pat, PathArguments, ReturnType, Type};
 
 #[derive(Debug, FromMeta)]
 struct ServiceItem {
@@ -25,6 +25,57 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
 
     let mut item = parse_macro_input!(item as ItemFn);
     let vis = item.vis.clone();
+    let (is_last_context, context_type) = item
+        .sig
+        .inputs
+        .last_mut()
+        .and_then(|arg| {
+            let pat_type = if let FnArg::Typed(ref mut pat_type) = arg {
+                pat_type
+            } else {
+                return None;
+            };
+
+            let index = if let Some((index, _)) =
+                pat_type.attrs.iter().enumerate().find(|(_, attr)| {
+                    attr.path
+                        .get_ident()
+                        .map_or(false, |v| v.to_string() == "context".to_owned())
+                }) {
+                index
+            } else {
+                return None;
+            };
+            pat_type.attrs.remove(index);
+
+            let ty = pat_type.ty.clone();
+            let path = if let Type::Path(path) = *ty {
+                path
+            } else {
+                return None;
+            };
+
+            let segments = path.path.segments;
+            let last_segment = if let Some(last_segment) = segments.last() {
+                last_segment
+            } else {
+                return None;
+            };
+
+            if last_segment.ident.to_string() != "Arc" {
+                return None;
+            }
+
+            let ty = if let PathArguments::AngleBracketed(arg) = &last_segment.arguments {
+                arg.args.clone()
+            } else {
+                return None;
+            };
+
+            Some((true, quote! { #ty }))
+        })
+        .unwrap_or_else(|| (false, quote! { () }));
+    let param_count = item.sig.inputs.len();
     let param_type: Vec<_> = item
         .sig
         .inputs
@@ -33,17 +84,39 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
             FnArg::Receiver(_) => None,
             FnArg::Typed(pat_type) => Some(pat_type.ty.clone()),
         })
+        .take(if is_last_context {
+            param_count - 1
+        } else {
+            param_count
+        })
         .collect();
     let param_name: Vec<_> = item
         .sig
         .inputs
         .iter()
-        .filter(|fnarg| match fnarg {
-            FnArg::Receiver(_) => false,
-            FnArg::Typed(_) => true,
+        .filter_map(|fnarg| match fnarg {
+            FnArg::Receiver(_) => None,
+            FnArg::Typed(pat) => match *pat.pat.clone() {
+                Pat::Ident(ident) => Some(ident.ident),
+                _ => None,
+            },
         })
         .enumerate()
-        .map(|(i, _)| format_ident!("param_{}", i))
+        .map(|(i, name)| {
+            if is_last_context && i + 1 == param_count {
+                format_ident!("context")
+            } else {
+                name
+            }
+        })
+        .collect();
+    let destructure_name: Vec<_> = param_name
+        .iter()
+        .take(if is_last_context {
+            param_count - 1
+        } else {
+            param_count
+        })
         .collect();
     let response_type = match item.sig.output.clone() {
         ReturnType::Default => quote! { () },
@@ -60,6 +133,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
         #vis struct #original_name;
 
         impl shaped::Service for #original_name {
+            type Context = #context_type;
             type Param = (#(#param_type,)*);
             type Response = #response_type;
             fn path(&self) -> shaped::route_path::RoutePath {
@@ -67,14 +141,14 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
             }
             fn make_variables(&self, params: &Self::Param) -> std::collections::HashMap<String, String> {
                 let mut vars = std::collections::HashMap::new();
-                let (#(#param_name,)*) = params;
+                let (#(#destructure_name,)*) = params;
                 #(
-                    vars.insert(stringify!(#param_name).to_owned(), #param_name.into());
+                    vars.insert(stringify!(#destructure_name).to_owned(), #param_name.into());
                 )*
                 vars
             }
-            fn execute(&self, params: Self::Param) -> Self::Response {
-                let (#(#param_name,)*) = params;
+            fn execute(&self, context: std::sync::Arc<Self::Context>, params: Self::Param) -> Self::Response {
+                let (#(#destructure_name,)*) = params;
                 #raw_function_name(#(#param_name),*)
             }
         }

@@ -3,6 +3,7 @@ mod test_macro {
     use service_macro::service;
     use shaped::route_path::{RoutePath, RoutePathPart};
     use shaped::Service;
+    use std::sync::Arc;
 
     #[service("/example/:name")]
     fn example(name: String) -> String {
@@ -22,6 +23,9 @@ mod test_macro {
 
     #[test]
     fn test_response() {
-        assert_eq!("Hello, world!", example.execute(("world".to_owned(),)));
+        assert_eq!(
+            "Hello, world!",
+            example.execute(Arc::new(()), ("world".to_owned(),))
+        );
     }
 }

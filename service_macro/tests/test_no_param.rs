@@ -3,6 +3,7 @@ mod test_no_param {
     use service_macro::service;
     use shaped::route_path::{RoutePath, RoutePathPart};
     use shaped::Service;
+    use std::sync::Arc;
 
     #[service("/example")]
     fn example() -> &'static str {
@@ -19,6 +20,6 @@ mod test_no_param {
 
     #[test]
     fn test_response() {
-        assert_eq!("Hello, world!", example.execute(()));
+        assert_eq!("Hello, world!", example.execute(Arc::new(()), ()));
     }
 }

@@ -1,6 +1,6 @@
 use service_macro::service;
 
-#[service("/get_version")]
+#[service("/meta/get_version")]
 pub fn get_version() -> &'static str {
     "1.0"
 }

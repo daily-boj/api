@@ -1,3 +1,2 @@
-mod get_version;
-
-pub use get_version::*;
+pub mod meta;
+pub mod member;

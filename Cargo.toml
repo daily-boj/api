@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "cli",
-    "github_db",
+    "filedriver",
     "dailyboj_api",
     "route_path",
     "service_macro",

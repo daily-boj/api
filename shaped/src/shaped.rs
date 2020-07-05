@@ -1,9 +1,10 @@
 use crate::{Provider, Resolver, Service};
+use rayon::prelude::*;
 use serde::Serialize;
 use serde_json;
 use std::fs;
 use std::path::Path;
-use std::result::Result as StdResult;
+use std::sync::Arc;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,10 +17,9 @@ pub enum ShapedError {
     Io(#[from] std::io::Error),
 }
 
-pub type Result<T> = StdResult<T, ShapedError>;
-
 pub struct Shaped {
-    resolvers: Vec<Box<dyn Fn() -> Result<Vec<(String, String)>>>>,
+    resolvers:
+        Vec<Box<dyn Fn() -> (String, Vec<(String, String)>, Vec<ShapedError>) + Sync + Send>>,
 }
 impl Shaped {
     pub fn new() -> Self {
@@ -34,47 +34,100 @@ impl Shaped {
     ) -> &mut Self
     where
         ConcreteProvider: Provider<Item = Parameters> + 'static,
-        ConcreteService: Service<Param = Parameters, Response = Response> + 'static,
-        Parameters: 'static,
-        Response: Serialize + 'static,
+        ConcreteService: Service<Context = (), Param = Parameters, Response = Response> + 'static,
+        Parameters: Sized + Send + 'static,
+        Response: Serialize + Sync + Send + 'static,
     {
-        self.with_resolver(Resolver::new(provider, service))
+        self.with_resolver(Arc::new(()), Resolver::new(provider, service))
     }
-    pub fn with_resolver<ConcreteProvider, ConcreteService, Parameters, Response>(
+    pub fn with_context<ConcreteProvider, ConcreteService, Context, Parameters, Response>(
         &mut self,
-        resolver: Resolver<ConcreteProvider, ConcreteService, Parameters, Response>,
+        context: Arc<Context>,
+        provider: ConcreteProvider,
+        service: ConcreteService,
     ) -> &mut Self
     where
         ConcreteProvider: Provider<Item = Parameters> + 'static,
-        ConcreteService: Service<Param = Parameters, Response = Response> + 'static,
-        Parameters: 'static,
-        Response: Serialize + 'static,
+        ConcreteService:
+            Service<Context = Context, Param = Parameters, Response = Response> + 'static,
+
+        Context: Sync + Send + 'static,
+        Parameters: Sized + Send + 'static,
+        Response: Serialize + Sync + Send + 'static,
+    {
+        self.with_resolver(context, Resolver::new(provider, service))
+    }
+    pub fn with_resolver<ConcreteProvider, ConcreteService, Context, Parameters, Response>(
+        &mut self,
+        context: Arc<Context>,
+        resolver: Resolver<ConcreteProvider, ConcreteService, Context, Parameters, Response>,
+    ) -> &mut Self
+    where
+        ConcreteProvider: Provider<Item = Parameters> + 'static,
+        ConcreteService:
+            Service<Context = Context, Param = Parameters, Response = Response> + 'static,
+        Context: Sync + Send + 'static,
+        Parameters: Sized + Send + 'static,
+        Response: Serialize + Send + 'static,
     {
         self.resolvers.push(Box::new(move || {
-            let resolved = resolver.resolve()?;
-            let resolved: StdResult<Vec<_>, _> = resolved
-                .iter()
-                .map(|(path, resp)| serde_json::to_string(resp).map(|v| (path.clone(), v)))
+            let (success, route_failure) = resolver.resolve(context.clone());
+            let (success, json_failure): (Vec<_>, Vec<_>) = success
+                .into_iter()
+                .map(|(path, resp)| serde_json::to_string(&resp).map(|v| (path.clone(), v)))
+                .partition(Result::is_ok);
+            let success: Vec<_> = success.into_iter().filter_map(Result::ok).collect();
+
+            let failure: Vec<_> = route_failure
+                .into_iter()
+                .map(ShapedError::from)
+                .chain(
+                    json_failure
+                        .into_iter()
+                        .filter_map(Result::err)
+                        .map(ShapedError::from),
+                )
                 .collect();
 
-            Ok(resolved?)
+            (resolver.service.path().to_string(), success, failure)
         }));
         self
     }
 
-    pub fn generate_on<P: AsRef<Path>>(&self, base: P) -> Result<()> {
+    pub fn generate_on<P: AsRef<Path>>(&self, base: P) -> Vec<RouteGeneration> {
         let base = base.as_ref();
 
-        for resolve in &self.resolvers {
-            for (path, response) in resolve()? {
-                let path = base.join(format!("{}.json", path));
-                if let Some(parent) = path.parent() {
-                    fs::create_dir_all(parent)?;
+        self.resolvers
+            .par_iter()
+            .map(|resolve| {
+                let (path, success, resolve_errors) = resolve();
+                let (success, io_errors): (Vec<_>, Vec<_>) = success
+                    .par_iter()
+                    .map(|(path, response)| -> Result<(), ShapedError> {
+                        let path = base.join(format!("{}.json", path));
+                        if let Some(parent) = path.parent() {
+                            fs::create_dir_all(parent)?;
+                        }
+                        fs::write(path, response)?;
+                        Ok(())
+                    })
+                    .partition(Result::is_ok);
+                let errors: Vec<_> = resolve_errors
+                    .into_iter()
+                    .chain(io_errors.into_iter().filter_map(Result::err))
+                    .collect();
+                RouteGeneration {
+                    name: path,
+                    success: success.len(),
+                    errors,
                 }
-                fs::write(path, response)?;
-            }
-        }
-
-        Ok(())
+            })
+            .collect()
     }
+}
+
+pub struct RouteGeneration {
+    pub name: String,
+    pub success: usize,
+    pub errors: Vec<ShapedError>,
 }
