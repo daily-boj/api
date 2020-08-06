@@ -104,11 +104,13 @@ impl Shaped {
                 let (success, io_errors): (Vec<_>, Vec<_>) = success
                     .par_iter()
                     .map(|(path, response)| -> Result<(), ShapedError> {
-                        let path = base.join(format!("{}.json", path));
-                        if let Some(parent) = path.parent() {
+                        let path_json = base.join(format!("{}.json", path));
+                        let path_normal = base.join(format!("{}", path));
+                        if let Some(parent) = path_json.parent() {
                             fs::create_dir_all(parent)?;
                         }
-                        fs::write(path, response)?;
+                        fs::write(path_json, response)?;
+                        fs::write(path_normal, response)?;
                         Ok(())
                     })
                     .partition(Result::is_ok);
