@@ -18,5 +18,6 @@ pub fn generate<P: AsRef<Path>>(base: P) -> Vec<RouteGeneration> {
             member_id_provider.tuplify(),
             member::profile,
         )
+        .with_context(member_repository.clone(), UnitProvider, member::list)
         .generate_on(base)
 }
