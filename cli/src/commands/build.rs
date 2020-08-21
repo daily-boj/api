@@ -1,8 +1,10 @@
 use crate::arguments::Build;
 use colored::*;
-use dailyboj_api::generate;
+use dailyboj_api::{generate, generate_schema};
 
 pub fn build(_args: Build) {
+    println!("Generating daily-boj database schema...");
+    generate_schema("./resources/schema");
     println!("Generating daily-boj api...");
     let res = generate("./generated");
     for route in res {

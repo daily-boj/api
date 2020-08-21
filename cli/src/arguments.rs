@@ -12,7 +12,12 @@ pub struct CliOptions {
 pub enum SubCommand {
     /// Build the api response(s) statically
     Build(Build),
+    /// Update database schema
+    UpdateSchema(UpdateSchema),
 }
 
 #[derive(Debug, Clap)]
 pub struct Build {}
+
+#[derive(Debug, Clap)]
+pub struct UpdateSchema {}

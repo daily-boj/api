@@ -10,5 +10,6 @@ fn main() {
 
     match options.sub_command {
         SubCommand::Build(args) => build(args),
+        SubCommand::UpdateSchema(args) => update_schema(args),
     }
 }
