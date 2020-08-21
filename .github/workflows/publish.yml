@@ -33,7 +33,7 @@ jobs:
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Generate API
-        run: cargo run
+        run: cargo run --bin cli -- build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
