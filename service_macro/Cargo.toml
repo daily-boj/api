@@ -11,9 +11,9 @@ proc-macro = true
 
 [dependencies]
 darling = "0.10.2"
+proc-macro2 = "1.0.19"
 quote = "1.0.7"
 syn = "1.0.38"
-proc-macro2 = "1.0.19"
 
 [dev-dependencies]
 shaped = { path = "../shaped" }

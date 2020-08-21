@@ -1,13 +1,13 @@
 [workspace]
 members = [
     "cli",
-    "filedriver",
     "dailyboj_api",
+    "filedriver",
+    "management-tool",
     "route_path",
     "service_macro",
     "shaped",
     "swaggering",
-    "management-tool",
 ]
 
 [profile.dev.package."*"]

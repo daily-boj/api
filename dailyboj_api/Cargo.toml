@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 filedriver = { path = "../filedriver" }
-once_cell = "1.4.0"
-serde = { version = "1.0.114", features = ["derive"] }
+once_cell = "1.4.1"
+serde = { version = "1.0.115", features = ["derive"] }
 service_macro = { path = "../service_macro" }
 shaped = { path = "../shaped" }
