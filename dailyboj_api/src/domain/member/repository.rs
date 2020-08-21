@@ -17,6 +17,20 @@ impl MemberRepository {
         self.table.read(id).map(Row::take)
     }
 
+    pub fn create_profile<T>(&mut self, id: T, member: Member) -> Row<Member>
+    where
+        T: AsRef<str>,
+    {
+        self.table.create(id, member)
+    }
+
+    pub fn has<T>(&mut self, id: T) -> bool
+    where
+        T: AsRef<str>,
+    {
+        self.table.has(id)
+    }
+
     pub fn get_all_user_id(&self) -> Vec<String> {
         self.table.read_all_pk().collect()
     }

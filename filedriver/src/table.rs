@@ -36,6 +36,12 @@ impl<T: RowValue> Table<T> {
         Some(Row::new(row_path, value))
     }
 
+    pub fn has<PK: AsRef<str>>(&self, pk: PK) -> bool {
+        let pk = pk.as_ref();
+        let row_path = self.basepath.join(format!("{}.json", pk));
+        row_path.exists() && row_path.is_file()
+    }
+
     pub fn read_all_pk<'a>(&'a self) -> impl Iterator<Item = String> + 'a {
         self.basepath
             .read_dir()
