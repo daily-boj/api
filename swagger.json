@@ -1,0 +1,192 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "daily-boj api",
+    "version": ""
+  },
+  "paths": {
+    "meta/get_version": {
+      "get": {
+        "operationId": "/meta/get_version",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "String"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "member/profile/{id}": {
+      "get": {
+        "operationId": "/member/profile/:id",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "Member"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "id",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "title": "String",
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "member/list": {
+      "get": {
+        "operationId": "/member/list",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "Array_of_String"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "String": {
+        "title": "String",
+        "type": "string"
+      },
+      "Member": {
+        "title": "Member Schema",
+        "description": "Entity represents the member of the daily-boj.",
+        "examples": [
+          {
+            "baekjoon_id": "asdhugh1",
+            "bio": "Lazy, but get Better.",
+            "codeforces_id": "RanolP",
+            "codeup_id": "asdhugh1",
+            "display_name": "Ranol☆P",
+            "github_id": "RanolP",
+            "gravatar_email": "public.ranolp@gmail.com",
+            "id": "ranolp",
+            "profile_image_url": null,
+            "webpage_url": "https://twitter.com/RanolP_777"
+          }
+        ],
+        "type": "object",
+        "required": [
+          "baekjoon_id",
+          "display_name",
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "title": "Id",
+            "description": "Unique ID of the member.",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "description": "Display name of the member.",
+            "type": "string"
+          },
+          "bio": {
+            "title": "Bio",
+            "description": "Bio of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profile_image_url": {
+            "title": "Profile Image Url",
+            "description": "Profile image url of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "gravatar_email": {
+            "title": "Gravatar Email",
+            "description": "Gravatar email, that is used for the profile image, of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "baekjoon_id": {
+            "title": "Baekjoon Id",
+            "description": "Baekjoon Online Judge id of the member.",
+            "type": "string"
+          },
+          "webpage_url": {
+            "title": "Webpage Url",
+            "description": "Url of a web page that belongs to the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "github_id": {
+            "title": "GitHub Id",
+            "description": "GitHub id of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "codeforces_id": {
+            "title": "CodeForces Id",
+            "description": "CodeForces id of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "codeup_id": {
+            "title": "CodeUp Id",
+            "description": "CodeUp id of the member.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Array_of_String": {
+        "title": "Array_of_String",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
