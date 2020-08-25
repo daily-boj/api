@@ -38,4 +38,17 @@ mod test_format {
         );
         Ok(())
     }
+
+    #[test]
+    fn test_fmt() -> anyhow::Result<()> {
+        let path = RoutePath::from_raw_parts(vec![
+            RoutePathPart::Constant("a".to_owned()),
+            RoutePathPart::Variable("b".to_owned()),
+            RoutePathPart::Constant("c".to_owned()),
+            RoutePathPart::Variable("d".to_owned()),
+        ]);
+        assert_eq!(format!("{}", path), "a/:b/c/:d".to_owned());
+        assert_eq!(format!("{:#}", path), "a/{b}/c/{d}".to_owned());
+        Ok(())
+    }
 }

@@ -7,7 +7,6 @@ members = [
     "route_path",
     "service_macro",
     "shaped",
-    "swaggering",
 ]
 
 [profile.dev.package."*"]

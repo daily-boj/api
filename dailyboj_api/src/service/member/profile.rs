@@ -3,8 +3,9 @@ use service_macro::service;
 use std::sync::Arc;
 
 #[service("/member/profile/:id")]
-pub fn profile(id: String, #[context] repo: Arc<MemberRepository>) -> Option<Member> {
+pub fn profile(id: String, #[context] repo: Arc<MemberRepository>) -> Member {
     repo.get_profile(id)
+        .expect("id must refers to an exist profile")
 }
 
 #[service("/member/list")]

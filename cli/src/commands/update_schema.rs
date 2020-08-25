@@ -7,10 +7,7 @@ pub fn update_schema(_args: UpdateSchema) {
     for res in generate_schema("./resources/schema") {
         match res {
             Ok(path) => {
-                println!(
-                    "{}",
-                    format!("success: {}", path.as_os_str().to_string_lossy()).green()
-                );
+                println!("{}", format!("success: {:?}", path.as_os_str()).green());
             }
             Err(e) => {
                 println!("{}", format!("failure: {}", e).green());

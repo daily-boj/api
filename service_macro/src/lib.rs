@@ -24,6 +24,14 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
     let route_path = attr_args.path;
 
     let mut item = parse_macro_input!(item as ItemFn);
+
+    let deprecated = item.attrs.iter().any(|attr| {
+        attr.path
+            .get_ident()
+            .filter(|ident| ident.to_string() == "deprecated")
+            .is_some()
+    });
+
     let vis = item.vis.clone();
     let (is_last_context, context_type) = item
         .sig
@@ -126,6 +134,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
     let raw_function_name = format_ident!("__service_macro_{}", original_name.clone());
 
     item.sig.ident = raw_function_name.clone();
+
     (quote! {
         #item
 
@@ -136,9 +145,87 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
             type Context = #context_type;
             type Param = (#(#param_type,)*);
             type Response = #response_type;
+
             fn path(&self) -> shaped::route_path::RoutePath {
                 #route_path.parse().expect(&format!("#original_name set invalid path: {}", #route_path))
             }
+
+            fn openapi_detail(&self) -> shaped::openapi::PathItem {
+                use shaped::openapi::*;
+                use shaped::schemars::{JsonSchema, schema::SchemaObject, schema_for};
+                PathItem {
+                    reference: None,
+                    summary: Option::<String>::None,
+                    description: Option::<String>::None,
+                    get: Some(Operation {
+                        tags: Vec::<String>::new(),
+                        summary: Option::<String>::None,
+                        description: Option::<String>::None,
+                        operation_id: Some(#route_path.to_owned()),
+                        parameters: Vec::<RefOr<Parameter>>::new(),
+                        request_body: Option::<RefOr<RequestBody>>::None,
+                        responses: Responses {
+                            responses: vec![
+                                (
+                                    "200",
+                                    Response {
+                                        description: "".to_owned(),
+                                        content: vec![
+                                            (
+                                                "application/json".to_owned(),
+                                                MediaType {
+                                                    schema: Some(SchemaObject::new_ref(<Self::Response as JsonSchema>::schema_name())),
+                                                    ..Default::default()
+                                                }
+                                            )
+                                        ].into_iter().collect(),
+                                        ..Default::default()
+                                    }
+                                ),
+                                (
+                                    "404",
+                                    Response {
+                                        description: "".to_owned(),
+                                        // content: Map<String, MediaType>,
+                                        ..Default::default()
+                                    }
+                                ),
+                            ]
+                            .into_iter()
+                            .map(|(status, response)| (status.to_owned(), RefOr::Object(response.clone())))
+                            .collect(),
+                            ..Default::default()
+                        },
+                        deprecated: #deprecated,
+                        ..Default::default()
+                    }),
+                    parameters: vec![
+                        #(
+                            RefOr::Object(
+                                Parameter {
+                                    name: stringify!(#destructure_name).to_owned(),
+                                    location: "query".to_owned(),
+                                    description: Option::<String>::None,
+                                    required: true,
+                                    deprecated: false,
+                                    allow_empty_value: false,
+                                    value: ParameterValue::Schema {
+                                        style: None,
+                                        explode: None,
+                                        allow_reserved: false,
+                                        schema: schema_for!(#param_type).schema,
+                                        example: None,
+                                        examples: None,
+                                    },
+                                    extensions: Default::default(),
+                                }
+                            )
+                        ),*
+                    ],
+                    ..Default::default()
+                }
+            }
+
             fn make_variables(&self, params: &Self::Param) -> std::collections::HashMap<String, String> {
                 let mut vars = std::collections::HashMap::new();
                 let (#(#destructure_name,)*) = params;
@@ -147,6 +234,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
                 )*
                 vars
             }
+
             fn execute(&self, context: std::sync::Arc<Self::Context>, params: Self::Param) -> Self::Response {
                 let (#(#destructure_name,)*) = params;
                 #raw_function_name(#(#param_name),*)

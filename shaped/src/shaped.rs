@@ -1,5 +1,7 @@
-use crate::{Provider, Resolver, Service};
+use crate::{OpenApiSettings, Provider, Resolver, Service};
+use okapi::openapi3::{Components, OpenApi, PathItem, Tag};
 use rayon::prelude::*;
+use schemars::{schema::RootSchema, schema_for, JsonSchema};
 use serde::Serialize;
 use serde_json;
 use std::fs;
@@ -18,13 +20,27 @@ pub enum ShapedError {
 }
 
 pub struct Shaped {
+    openapi_settings: Option<OpenApiSettings>,
     resolvers:
         Vec<Box<dyn Fn() -> (String, Vec<(String, String)>, Vec<ShapedError>) + Sync + Send>>,
+    schemas: Vec<(String, RootSchema)>,
+    paths: Vec<(String, PathItem)>,
 }
 impl Shaped {
-    pub fn new() -> Self {
+    pub fn no_openapi() -> Self {
         Shaped {
             resolvers: Vec::new(),
+            openapi_settings: None,
+            schemas: Vec::new(),
+            paths: Vec::new(),
+        }
+    }
+    pub fn openapi(openapi_settings: OpenApiSettings) -> Self {
+        Shaped {
+            resolvers: Vec::new(),
+            openapi_settings: Some(openapi_settings),
+            schemas: Vec::new(),
+            paths: Vec::new(),
         }
     }
     pub fn with<ConcreteProvider, ConcreteService, Parameters, Response>(
@@ -36,7 +52,7 @@ impl Shaped {
         ConcreteProvider: Provider<Item = Parameters> + 'static,
         ConcreteService: Service<Context = (), Param = Parameters, Response = Response> + 'static,
         Parameters: Sized + Send + 'static,
-        Response: Serialize + Sync + Send + 'static,
+        Response: JsonSchema + Serialize + Sync + Send + 'static,
     {
         self.with_resolver(Arc::new(()), Resolver::new(provider, service))
     }
@@ -50,10 +66,9 @@ impl Shaped {
         ConcreteProvider: Provider<Item = Parameters> + 'static,
         ConcreteService:
             Service<Context = Context, Param = Parameters, Response = Response> + 'static,
-
         Context: Sync + Send + 'static,
         Parameters: Sized + Send + 'static,
-        Response: Serialize + Sync + Send + 'static,
+        Response: JsonSchema + Serialize + Sync + Send + 'static,
     {
         self.with_resolver(context, Resolver::new(provider, service))
     }
@@ -68,8 +83,16 @@ impl Shaped {
             Service<Context = Context, Param = Parameters, Response = Response> + 'static,
         Context: Sync + Send + 'static,
         Parameters: Sized + Send + 'static,
-        Response: Serialize + Send + 'static,
+        Response: JsonSchema + Serialize + Send + 'static,
     {
+        if self.openapi_settings.is_some() {
+            self.schemas
+                .push((Response::schema_name(), schema_for!(Response)));
+            self.paths.push((
+                format!("{:#}", resolver.service.path()),
+                resolver.service.openapi_detail(),
+            ))
+        }
         self.resolvers.push(Box::new(move || {
             let (success, route_failure) = resolver.resolve(context.clone());
             let (success, json_failure): (Vec<_>, Vec<_>) = success
@@ -96,6 +119,45 @@ impl Shaped {
 
     pub fn generate_on<P: AsRef<Path>>(&self, base: P) -> Vec<RouteGeneration> {
         let base = base.as_ref();
+
+        if let Some(settings) = &self.openapi_settings {
+            let openapi = OpenApi {
+                openapi: "3.0.0".to_owned(),
+                info: settings.info.clone(),
+                paths: self.paths.iter().cloned().collect(),
+                components: Some(Components {
+                    schemas: self
+                        .schemas
+                        .iter()
+                        .flat_map(|(name, schema)| {
+                            schema
+                                .definitions
+                                .iter()
+                                .map(|(name, schema)| (name.clone(), schema.clone().into_object()))
+                                .chain(std::iter::once((name.clone(), schema.schema.clone())))
+                        })
+                        .collect(),
+                    ..Default::default()
+                }),
+                tags: Vec::<Tag>::default(),
+                ..Default::default()
+            };
+
+            if fs::create_dir_all(base).is_err() {
+                eprintln!("Failed to create folder: {:?}", base.as_os_str());
+            }
+            if fs::write(
+                base.join("swagger.json"),
+                serde_json::to_string_pretty(&openapi).expect("will not fail"),
+            )
+            .is_err()
+            {
+                eprintln!(
+                    "Failed to create file: {:?}",
+                    base.join("swagger.json").as_os_str()
+                )
+            }
+        }
 
         self.resolvers
             .par_iter()

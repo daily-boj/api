@@ -12,15 +12,20 @@ pub fn generate<P: AsRef<Path>>(base: P) -> Vec<RouteGeneration> {
     let member_repository = MemberRepository::new(&connection);
     let member_id_provider = create_member_id_provider(member_repository.clone());
 
-    Shaped::new()
-        .with(provider::UnitProvider, meta::get_version)
-        .with_context(
-            member_repository.clone(),
-            member_id_provider.tuplify(),
-            member::profile,
-        )
-        .with_context(member_repository.clone(), UnitProvider, member::list)
-        .generate_on(base)
+    Shaped::openapi(OpenApiSettings {
+        info: Info {
+            title: "daily-boj api".to_owned(),
+            ..Default::default()
+        },
+    })
+    .with(provider::UnitProvider, meta::get_version)
+    .with_context(
+        member_repository.clone(),
+        member_id_provider.tuplify(),
+        member::profile,
+    )
+    .with_context(member_repository.clone(), UnitProvider, member::list)
+    .generate_on(base)
 }
 
 macro_rules! schema {

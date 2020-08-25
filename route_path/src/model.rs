@@ -38,7 +38,13 @@ impl fmt::Display for RoutePath {
             .iter()
             .map(|part| match part {
                 RoutePathPart::Constant(path) => path.clone(),
-                RoutePathPart::Variable(name) => format!(":{}", name),
+                RoutePathPart::Variable(name) => {
+                    if f.alternate() {
+                        format!("{{{}}}", name)
+                    } else {
+                        format!(":{}", name)
+                    }
+                }
             })
             .collect();
         f.write_str(&formatted.join("/"))
