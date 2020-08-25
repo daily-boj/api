@@ -89,7 +89,7 @@ impl Shaped {
             self.schemas
                 .push((Response::schema_name(), schema_for!(Response)));
             self.paths.push((
-                format!("/{:#}", resolver.service.path()),
+                format!("/{:#}.json", resolver.service.path()),
                 resolver.service.openapi_detail(),
             ))
         }
