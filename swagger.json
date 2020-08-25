@@ -4,6 +4,11 @@
     "title": "daily-boj api",
     "version": ""
   },
+  "servers": [
+    {
+      "url": "https://daily-boj.github.io/api"
+    }
+  ],
   "paths": {
     "/meta/get_version": {
       "get": {
