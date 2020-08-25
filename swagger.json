@@ -10,7 +10,7 @@
     }
   ],
   "paths": {
-    "/meta/get_version": {
+    "/meta/get_version.json": {
       "get": {
         "operationId": "/meta/get_version",
         "responses": {
@@ -30,7 +30,7 @@
         }
       }
     },
-    "/member/profile/{id}": {
+    "/member/profile/{id}.json": {
       "get": {
         "operationId": "/member/profile/:id",
         "responses": {
@@ -61,7 +61,7 @@
         }
       ]
     },
-    "/member/list": {
+    "/member/list.json": {
       "get": {
         "operationId": "/member/list",
         "responses": {
