@@ -17,7 +17,7 @@ pub use service::Service;
 pub use schemars;
 
 pub mod prelude {
-    pub use crate::openapi::{Info, OpenApiSettings, PathItem};
+    pub use crate::openapi::{Info, OpenApiSettings, Server};
     pub use crate::provider;
     pub use crate::provider::{Provider, ProviderChain, Tuplify, UnitProvider, VecProvider};
     pub use crate::resolver::Resolver;

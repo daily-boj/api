@@ -124,6 +124,7 @@ impl Shaped {
             let openapi = OpenApi {
                 openapi: "3.0.0".to_owned(),
                 info: settings.info.clone(),
+                servers: vec![settings.server.clone()],
                 paths: self.paths.iter().cloned().collect(),
                 components: Some(Components {
                     schemas: self

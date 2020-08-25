@@ -17,6 +17,10 @@ pub fn generate<P: AsRef<Path>>(base: P) -> Vec<RouteGeneration> {
             title: "daily-boj api".to_owned(),
             ..Default::default()
         },
+        server: Server {
+            url: "https://daily-boj.github.io/api".to_owned(),
+            ..Default::default()
+        },
     })
     .with(provider::UnitProvider, meta::get_version)
     .with_context(
