@@ -47,7 +47,7 @@
       "parameters": [
         {
           "name": "id",
-          "in": "query",
+          "in": "path",
           "required": true,
           "schema": {
             "title": "String",
