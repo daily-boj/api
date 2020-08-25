@@ -204,7 +204,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
                             RefOr::Object(
                                 Parameter {
                                     name: stringify!(#destructure_name).to_owned(),
-                                    location: "query".to_owned(),
+                                    location: "path".to_owned(),
                                     description: Option::<String>::None,
                                     required: true,
                                     deprecated: false,
