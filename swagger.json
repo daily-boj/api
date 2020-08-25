@@ -5,7 +5,7 @@
     "version": ""
   },
   "paths": {
-    "meta/get_version": {
+    "/meta/get_version": {
       "get": {
         "operationId": "/meta/get_version",
         "responses": {
@@ -14,7 +14,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "String"
+                  "$ref": "#/components/schemas/String"
                 }
               }
             }
@@ -25,7 +25,7 @@
         }
       }
     },
-    "member/profile/{id}": {
+    "/member/profile/{id}": {
       "get": {
         "operationId": "/member/profile/:id",
         "responses": {
@@ -34,7 +34,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "Member"
+                  "$ref": "#/components/schemas/Member"
                 }
               }
             }
@@ -56,7 +56,7 @@
         }
       ]
     },
-    "member/list": {
+    "/member/list": {
       "get": {
         "operationId": "/member/list",
         "responses": {
@@ -65,7 +65,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "Array_of_String"
+                  "$ref": "#/components/schemas/Array_of_String"
                 }
               }
             }
