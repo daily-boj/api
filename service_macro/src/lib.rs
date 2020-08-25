@@ -174,7 +174,7 @@ pub fn service(args: TokenStream, item: TokenStream) -> TokenStream {
                                             (
                                                 "application/json".to_owned(),
                                                 MediaType {
-                                                    schema: Some(SchemaObject::new_ref(<Self::Response as JsonSchema>::schema_name())),
+                                                    schema: Some(SchemaObject::new_ref(format!("#/components/schemas/{}", <Self::Response as JsonSchema>::schema_name()))),
                                                     ..Default::default()
                                                 }
                                             )
